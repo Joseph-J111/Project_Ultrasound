@@ -1,0 +1,4 @@
+config BR2_PACKAGE_HELLOWORLD_MODULE
+	bool "ultrasound"
+	help
+	  Ultrasound driver for Embeded OS project

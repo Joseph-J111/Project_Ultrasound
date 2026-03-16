@@ -1,0 +1,7 @@
+locations :
+
+ultrasound 		=> buildroot/package
+stm32mp157c-dk2.dts 	=> buildroot/board/insa/sse
+stm32mp151.dtsi		=> buildroot/board/insa/sse (not sure it is necessary)
+insa_defconfig		=> Whatever
+
