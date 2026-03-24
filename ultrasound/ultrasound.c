@@ -14,143 +14,127 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Ultrasound distance sensor driver");
 MODULE_AUTHOR("Joseph Joud");
 MODULE_VERSION("1.0");
-//MODULE_SUPPORTED_DEVICE("HC-SR04");
+//MODULE_SUPPORTED_DEVICE("HC-SR04"); // Does not work !
 
-static ssize_t dev_read(struct file *,char *,size_t, loff_t *);
-static int dev_open(struct inode *,struct file *);
-static int dev_release(struct inode *,struct file *);
-static int probe ( struct platform_device * pdev );
+// Constants 
+static int major;
+static int busy = 0;
+int timeout = 100000;
+
+static const struct of_device_id ultrasound_dt[] = {
+    { .compatible = "insa,ultrasound" },
+    {}
+};
+
+MODULE_DEVICE_TABLE(of, ultrasound_dt);
+
+
+static int ultrasound_probe(struct platform_device *pdev);
+static int ultrasound_remove(struct platform_device *pdev);
+static int dev_open(struct inode *ino, struct file *fp);
+static int dev_release(struct inode *ino, struct file *fp);
+static ssize_t dev_read(struct file *fp, char __user *buf, size_t n, loff_t *of);
+
+// Structure Driver
+static struct platform_driver ultrasound_driver = {
+    .driver = {
+        .name = "ultrasound",
+        .of_match_table = ultrasound_dt,
+    },
+    .probe  = ultrasound_probe,
+    .remove = ultrasound_remove,
+};
 
 static struct file_operations fops = {
+    .owner = THIS_MODULE,
     .open = dev_open,
     .read = dev_read,
     .release = dev_release,
 };
 
-static const struct of_device_id ultrasound_dt[] = {
-    { .compatible = "insa,ultrasound" }, // DOIT être identique au .dts
-    {}                   // Toujours finir par un élément vide
-};
-
-static struct platform_driver ultrasound_driver = {
-    .driver = {
-        .name = "ultrasound",
-        .of_match_table = ultrasound_dt, // Lien avec le Device Tree
-    },
-    .probe  = probe,  // Le probe est ici !
-    .remove = NULL, //TODO
-};
-
-
-struct gpios {
+struct gpios {                  // PROBABLY NOT NEEDED
     struct gpio_desc *trig_gpio;
     struct gpio_desc *echo_gpio;
 };
 
+static struct gpios *us_gpios;
 
-
-struct device *dev;
-struct gpios *us_gpios;
-static int busy;
-static int done;
-static int major;
-
-static int kinit ( void ) {
-    /* register as a character device */
-    major = register_chrdev (0 , "DUsound" , &fops );
-
-    if (major < 0) {
-        printk(KERN_ALERT "Ultrasound failed to register a major number\n");
-        return major;
+//opening of the chardev
+static int dev_open(struct inode *ino, struct file *fp) {
+    if (busy) {
+        return -EBUSY;
     }
-    printk(KERN_INFO "Ultrasound: registered correctly with major number %d\n", major);
-    
-    done = busy = 0;
-    
+    busy = 1;
     return 0;
 }
 
-static void kexit ( void ) {
-    unregister_chrdev ( major , "DUsound" ) ;
-    return;
-}
-
-static int probe ( struct platform_device * pdev ) {
-
-    dev = &pdev->dev; //ponter to device structure
-
-    us_gpios = devm_kzalloc ( dev , sizeof ( struct gpios ) , GFP_KERNEL ) ;
-    if ( !us_gpios ) {
-        dev_err ( dev , "Failed to allocate memory for gpios\n" ) ;
-        return -ENOMEM ;
-    }
-    us_gpios->trig_gpio = devm_gpiod_get ( dev , "trig" , GPIOD_OUT_LOW ) ;
-    if ( IS_ERR ( us_gpios->trig_gpio ) ) {
-        dev_err ( dev , "Failed to get trig gpio\n" ) ;
-        return PTR_ERR ( us_gpios->trig_gpio ) ;
-    }
-    us_gpios->echo_gpio = devm_gpiod_get ( dev , "echo" , GPIOD_IN ) ;
-    if ( IS_ERR ( us_gpios->echo_gpio ) ) {
-        dev_err ( dev , "Failed to get echo gpio\n" ) ;
-        return PTR_ERR ( us_gpios->echo_gpio ) ;
-    }
-
-    printk(KERN_INFO "Ultrasound: device probed\n");
-}
-
-static int dev_open ( struct inode * ino , struct file * fp ) {
-/* if device is in use , reply with busy error */
-    if ( busy ){
-        return -EBUSY ;
-    }   
-    busy = 1; /* toggle device as busy */
-    try_module_get ( THIS_MODULE ) ; /* tell the system that we’re live */
+//closing of the chardev
+static int dev_release(struct inode *ino, struct file *fp) {
+    busy = 0;
     return 0;
 }
 
-static int dev_release ( struct inode * ino , struct file * fp ) {
-    busy = 0; /* toggle device as not busy */
-    module_put ( THIS_MODULE ) ; /* tell the system that we’re done */
+//Probe = initialization of all driver structures (GPIOs, character device, etc.)
+static int ultrasound_probe(struct platform_device *pdev) {
+    struct device *dev = &pdev->dev;
+
+    us_gpios = devm_kzalloc(dev, sizeof(struct gpios), GFP_KERNEL);
+    if (!us_gpios) {
+        dev_err(dev, "Erreur d'allocation memoire\n");
+        return -ENOMEM;
+    }
+
+    //GPIOs 
+    us_gpios->trig_gpio = devm_gpiod_get(dev, "trigger", GPIOD_OUT_LOW);
+    us_gpios->echo_gpio = devm_gpiod_get(dev, "echo", GPIOD_IN);
+
+    if (IS_ERR(us_gpios->trig_gpio) || IS_ERR(us_gpios->echo_gpio)) {
+        dev_err(dev, "Erreur GPIO (verifie le DTmaS)\n");
+        return -EINVAL;
+    }
+
+    //Chardev registering
+    major = register_chrdev(0, "DUsound", &fops);
+    if (major < 0) return major;
+
+    dev_info(dev, "Ultrasound probed! Major = %d\n", major);
     return 0;
 }
 
-static ssize_t dev_read ( struct file * fp , char * buf , size_t n , loff_t * of )
-{
+static ssize_t dev_read(struct file *fp, char __user *buf, size_t n, loff_t *of) {
     int result = 0;
-    int distance = 0;
     int i;
 
-    //send trigger 
-    gpiod_set_value(us_gpios->trig_gpio,1);
+    if (*of > 0) return 0; //*of is the offset in the chardev file, we use it to know if we already read something or not (since we only have one int to read, we can just check if of > 0 
+
+   
+    if (!us_gpios) return -ENODEV; //checking gpios is defined properly
+
+    // Trigger 10us 
+    gpiod_set_value(us_gpios->trig_gpio, 1);
     udelay(10);
-    gpiod_set_value(us_gpios->trig_gpio,0);
+    gpiod_set_value(us_gpios->trig_gpio, 0);
 
-    // wait for echo
-    //TODO: add timeout
-    //TODO: use passive wait
+    // Echo (waiting for start of echo signal)
+    while (gpiod_get_value(us_gpios->echo_gpio) == 0 && timeout--) cpu_relax(); 
 
-    while ( gpiod_get_value ( us_gpios->echo_gpio ) == 0 ) ;
-    /* measure echo duration */
-    for ( i = 0 ; i < 1000000 ; i++ ) {
-        if ( gpiod_get_value ( us_gpios->echo_gpio ) == 0 ) {
-            break;
-        }
-        udelay (1) ;
+    // Measure
+    for (i = 0; i < 1000000; i++) {
+        if (gpiod_get_value(us_gpios->echo_gpio) == 0) break;
+        udelay(1);
     }
-    result = i;
-    distance = result * 0.34 / 2; /* calculate distance in mm */
-    
+    result = i; //TODO: convert to mm
 
-    if (copy_to_user(buf, &result, sizeof(result))) {
-        return -EFAULT;
-    } 
-
-    /* copy data to user buffer */
-    if ( copy_to_user ( buf , &result , sizeof ( result ) ) ) {
-        return -EFAULT;
-    }
-    return sizeof ( result );
+    if (copy_to_user(buf, &result, sizeof(result))) return -EFAULT;
+    *of += sizeof(result);
+    return sizeof(result);
 }
 
-module_init(kinit);
-module_exit(kexit);
+
+static int ultrasound_remove(struct platform_device *pdev) { 
+    unregister_chrdev(major, "DUsound");
+    return 0;
+    //TODO ?? : free gpios etc ... 
+}
+
+module_platform_driver(ultrasound_driver); //macro magique
