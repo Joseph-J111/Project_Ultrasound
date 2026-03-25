@@ -14,7 +14,7 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Ultrasound distance sensor driver");
 MODULE_AUTHOR("Joseph Joud");
 MODULE_VERSION("1.0");
-//MODULE_SUPPORTED_DEVICE("HC-SR04"); // Does not work !
+//MODULE_SUPPORTED_DEVICE("HC-SR04"); // Does not work ! idk why but whatever
 
 // Constants 
 static int major;
@@ -89,7 +89,7 @@ static int ultrasound_probe(struct platform_device *pdev) {
     us_gpios->echo_gpio = devm_gpiod_get(dev, "echo", GPIOD_IN);
 
     if (IS_ERR(us_gpios->trig_gpio) || IS_ERR(us_gpios->echo_gpio)) {
-        dev_err(dev, "Erreur GPIO (verifie le DTmaS)\n");
+        dev_err(dev, "Erreur GPIO (probably Dts related)\n");
         return -EINVAL;
     }
 
@@ -116,14 +116,17 @@ static ssize_t dev_read(struct file *fp, char __user *buf, size_t n, loff_t *of)
     gpiod_set_value(us_gpios->trig_gpio, 0);
 
     // Echo (waiting for start of echo signal)
-    while (gpiod_get_value(us_gpios->echo_gpio) == 0 && timeout--) cpu_relax(); 
+    while (gpiod_get_value(us_gpios->echo_gpio) == 0 && timeout--) {
+        cpu_relax(); // defined as 10 nops in buildroot/output/build/linux-6.9.8/arch/arm/include/asm/vdso/processor.h (lowers cpu usge while waiting)
+    } 
 
     // Measure
     for (i = 0; i < 1000000; i++) {
         if (gpiod_get_value(us_gpios->echo_gpio) == 0) break;
-        udelay(1);
+        udelay(1); // replace with passive waiting ?
     }
-    result = i; //TODO: convert to mm
+    result = i; 
+    result = (result * 340) / 1000000; // in mm
 
     if (copy_to_user(buf, &result, sizeof(result))) return -EFAULT;
     *of += sizeof(result);
