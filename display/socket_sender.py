@@ -15,7 +15,7 @@ def sender( Ip_PC,port,file_path ) :
     conn, addr = s.accept()
     with  conn: 
         while True :
-            with open(dev/test_binaire.bin, "rb") as f:                          #chemin à modifier !!
+            with open(file_path, "rb") as f:                          #chemin à modifier !!
                 bytes = f.read(4) # Lecture des 4 octets binaires
                 if len(bytes) == 4:
                     s.sendall(bytes)  #envoie de en binaire de la distance
