@@ -24,9 +24,9 @@ def receiver(Ip_Pc,port,s) :
         try :
             data=s.recv(4)
             if len(data) == 4 : 
-                valeur = struct.unpack('<f', data)[0]
-                print(f"Valeur trouvée : {valeur} cm")
-                label_distance.config (text=f"{valeur:.2f} cm")
+                valeur = struct.unpack('<i', data)[0]
+                print(f"Valeur trouvée : {valeur} mm")
+                label_distance.config (text={valeur} mm")
         except BlockingIOError:
             pass
         root.after(100, lambda : receiver(Ip_Pc, port,s))
