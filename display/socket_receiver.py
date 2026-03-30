@@ -26,9 +26,10 @@ def receiver(Ip_Pc,port,s) :
             if len(data) == 4 : 
                 valeur = struct.unpack('<f', data)[0]
                 print(f"Valeur trouvée : {valeur} cm")
+                label_distance.config (text=f"{valeur:.2f} cm")
         except BlockingIOError:
             pass
-        root.after(100, update_distance)
+        root.after(100, lambda : receiver(Ip_Pc, port,s))
     
 
 
@@ -43,6 +44,6 @@ label_distance = tk.Label(root, text="En attente ..")
 label_distance.pack(pady=30)
 
 
-root.after(100, receiver,Ip_Pc,port,s)
+root.after(100,lambda : receiver(Ip_Pc,port,s))
 
 root.mainloop()   #permet d'afficher la fenêtre et de la maintenir ouverte quand on lance IHM
