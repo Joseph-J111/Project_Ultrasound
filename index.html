@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Interface Capteur - INSA</title>
+	<style>
+    	body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+    	#afficheur { font-size: 3em; color: #0066cc; }
+	</style>
+</head>
+<body>
+
+	<h1>Mesure de Distance</h1>
+    
+	<div id="afficheur">
+    	<span id="distance-valeur">--</span> cm
+	</div>
+
+	<script>
+    	function rafraichirDonnee() {
+        	// Le navigateur demande la donnée à la route '/data' de ton serveur Python
+        	fetch('/data')
+            	.then(response => response.text())
+            	.then(valeur => {
+                	// On injecte la valeur reçue dans la balise HTML qui a l'ID "distance-valeur"
+                	document.getElementById('distance-valeur').innerText = valeur;
+            	});
+    	}
+
+    	// On lance la fonction toutes les 500ms (0.5 seconde)
+    	setInterval(rafraichirDonnee, 500);
+	</script>
+
+</body>
+</html>
