@@ -62,7 +62,7 @@ def main():
         pygame.display.flip()
         
         # 10 FPS suffisent largement pour un capteur ultrason (évite de chauffer le CPU)
-        clock.tick(10)
+        clock.tick(2)
 
     pygame.quit()
 
