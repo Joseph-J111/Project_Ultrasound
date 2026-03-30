@@ -19,3 +19,8 @@ def get_data():
     		return distance # Renvoie juste "15.4" par exemple
 	except:
     		return "Erreur"
+
+
+if __name__ == '__main__':
+    # host='0.0.0.0' permet au serveur d'être visible par ton PC sur le réseau
+    app.run(host='0.0.0.0', port=5000)
