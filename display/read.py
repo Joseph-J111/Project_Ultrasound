@@ -10,7 +10,7 @@ def read_data(file_path) :
             bytes = f.read(4)
             if len(bytes) < 4:
                 return "Erreur : données incomplètes"
-            valeur = struct.unpack('<f', bytes)[0]  #f pour float
+            valeur = struct.unpack('<i', bytes)[0]  #f pour float
             return valeur
     
     except IOError :
@@ -25,7 +25,7 @@ fichier_test = "dev/test_binaire.bin"    #chemin à modifier
 while True : 
  resultat = read_data(fichier_test)
  print(f"Lecture du fichier : {fichier_test} ")
- print(f"Valeur trouvée : {resultat} cm")
+ print(f"Valeur trouvée : {resultat} mm")
  print(f"               Ctrl + C pour stopper ^^")
  time.sleep(1)
 
