@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 import os
 
 app = Flask(__name__)
@@ -12,10 +12,10 @@ def index():
 @app.route('/data')
 def get_data():
 	try:
-    	# Lecture du driver dans le kernelspace [cite: 537, 638, 648]
-    	fd = os.open("/dev/ultrason", os.O_RDONLY)
-    	distance = os.read(fd, 10).decode().strip()
-    	os.close(fd)
-    	return distance # Renvoie juste "15.4" par exemple
+    		# Lecture du driver dans le kernelspace [cite: 537, 638, 648]
+    		fd = os.open("/dev/DUsound", os.O_RDONLY)
+    		distance = os.read(fd, 4).decode().strip()
+    		os.close(fd)
+    		return distance # Renvoie juste "15.4" par exemple
 	except:
-    	return "Erreur"
+    		return "Erreur"

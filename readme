@@ -5,3 +5,15 @@ stm32mp157c-dk2.dts 	=> buildroot/board/insa/sse
 stm32mp151.dtsi		=> buildroot/board/insa/sse (not sure it is necessary)
 insa_defconfig		=> Whatever
 
+// Display
+Method 1: Basic 
+ * changing the way in the file read.py
+ * call -- " python3 read.py "
+Method 2: Ethernet - Socket
+  * find the card's IP adress and the port
+  * call  --  "  python3 socket_sender.py < card's IP > < Port> < file_path >  "
+  * call -- " python3 socket_receiver.py <Card's Ip< < Port>
+
+Affichage sur un PC via un navigateur web: 
+Lancer le serveurFlask.py via >> python3 serveur.py sur la carte
+puis se connecter à l'adresse ip de la carte
