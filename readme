@@ -5,3 +5,7 @@ stm32mp157c-dk2.dts 	=> buildroot/board/insa/sse
 stm32mp151.dtsi		=> buildroot/board/insa/sse (not sure it is necessary)
 insa_defconfig		=> Whatever
 
+
+Affichage sur un PC via un navigateur web: 
+Lancer le serveurFlask.py via >> python3 serveur.py sur la carte
+puis se connecter à l'adresse ip de la carte
