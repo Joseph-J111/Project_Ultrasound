@@ -19,7 +19,9 @@ MODULE_VERSION("1.0");
 // Constants 
 static int major;
 static int busy = 0;
-int timeout = 100000;
+
+static struct class *ultrasound_class;
+static struct device *ultrasound_device;
 
 static const struct of_device_id ultrasound_dt[] = {
     { .compatible = "insa,ultrasound" },
@@ -34,6 +36,7 @@ static int ultrasound_remove(struct platform_device *pdev);
 static int dev_open(struct inode *ino, struct file *fp);
 static int dev_release(struct inode *ino, struct file *fp);
 static ssize_t dev_read(struct file *fp, char __user *buf, size_t n, loff_t *of);
+
 
 // Structure Driver
 static struct platform_driver ultrasound_driver = {
@@ -52,7 +55,7 @@ static struct file_operations fops = {
     .release = dev_release,
 };
 
-struct gpios {                  // PROBABLY NOT NEEDED
+struct gpios {                  
     struct gpio_desc *trig_gpio;
     struct gpio_desc *echo_gpio;
 };
@@ -97,6 +100,23 @@ static int ultrasound_probe(struct platform_device *pdev) {
     major = register_chrdev(0, "DUsound", &fops);
     if (major < 0) return major;
 
+    // Create device class and device file
+
+    ultrasound_class = class_create("DUsound_class"); 
+    if (IS_ERR(ultrasound_class)) {
+        unregister_chrdev(major, "DUsound");
+        return PTR_ERR(ultrasound_class);
+    }
+
+    // MKDEV(major, 0) creates a device number with the major number and minor number 0
+
+    ultrasound_device = device_create(ultrasound_class, dev, MKDEV(major, 0), NULL, "DUsound");
+    if (IS_ERR(ultrasound_device)) {
+        class_destroy(ultrasound_class);
+        unregister_chrdev(major, "DUsound");
+        return PTR_ERR(ultrasound_device);
+    }
+
     dev_info(dev, "Ultrasound probed! Major = %d\n", major);
     return 0;
 }
@@ -104,6 +124,7 @@ static int ultrasound_probe(struct platform_device *pdev) {
 static ssize_t dev_read(struct file *fp, char __user *buf, size_t n, loff_t *of) {
     int result = 0;
     int i;
+    int timeout = 100000;
 
     if (*of > 0) return 0; //*of is the offset in the chardev file, we use it to know if we already read something or not (since we only have one int to read, we can just check if of > 0 
 
@@ -120,13 +141,16 @@ static ssize_t dev_read(struct file *fp, char __user *buf, size_t n, loff_t *of)
         cpu_relax(); // defined as 10 nops in buildroot/output/build/linux-6.9.8/arch/arm/include/asm/vdso/processor.h (lowers cpu usge while waiting)
     } 
 
+    //printk("timeout = %d\n", timeout);
+
     // Measure
     for (i = 0; i < 1000000; i++) {
         if (gpiod_get_value(us_gpios->echo_gpio) == 0) break;
         udelay(1); // replace with passive waiting ?
     }
+    //printk("i = %d\n", i);
     result = i; 
-    result = (result * 340) / 1000000; // in mm
+    result = (i * 172) / 1000; // in mm
 
     if (copy_to_user(buf, &result, sizeof(result))) return -EFAULT;
     *of += sizeof(result);
@@ -136,8 +160,12 @@ static ssize_t dev_read(struct file *fp, char __user *buf, size_t n, loff_t *of)
 
 static int ultrasound_remove(struct platform_device *pdev) { 
     unregister_chrdev(major, "DUsound");
+    device_destroy(ultrasound_class, MKDEV(major, 0));
+    class_destroy(ultrasound_class);
+    unregister_chrdev(major, "DUsound");
+    printk("Ultrasound removed\n");
     return 0;
-    //TODO ?? : free gpios etc ... 
+     
 }
 
 module_platform_driver(ultrasound_driver); //macro magique

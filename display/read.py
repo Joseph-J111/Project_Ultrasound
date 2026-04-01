@@ -21,7 +21,7 @@ def read_data(file_path) :
 
 #-------------------- end_function -------------------------
         #test de la fonction dans terminal
-fichier_test = "dev/test_binaire.bin"    #chemin à modifier 
+fichier_test = "/dev/DUsound"    #chemin à modifier 
 while True : 
  resultat = read_data(fichier_test)
  print(f"Lecture du fichier : {fichier_test} ")
