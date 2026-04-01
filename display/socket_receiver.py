@@ -17,7 +17,7 @@ port = int(sys.argv[2])
 
 #init the socket
 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM);
-s.connect((Ip_PC,port))
+s.connect((Ip_Pc,port))
 s.setblocking(False)
 
 def receiver(Ip_Pc,port,s) :
@@ -26,7 +26,7 @@ def receiver(Ip_Pc,port,s) :
             if len(data) == 4 : 
                 valeur = struct.unpack('<i', data)[0]
                 print(f"Valeur trouvée : {valeur} mm")
-                label_distance.config (text={valeur} mm")
+                label_distance.config(text=f"{valeur} mm")
         except BlockingIOError:
             pass
         root.after(100, lambda : receiver(Ip_Pc, port,s))
