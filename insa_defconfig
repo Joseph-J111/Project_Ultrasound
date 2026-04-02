@@ -484,8 +484,8 @@ BR2_OPTIMIZE_2=y
 #
 # static only needs a toolchain w/ uclibc or musl
 #
-BR2_SHARED_LIBS=y
-# BR2_SHARED_STATIC_LIBS is not set
+# BR2_SHARED_LIBS is not set
+BR2_SHARED_STATIC_LIBS=y
 BR2_PACKAGE_OVERRIDE_FILE="$(CONFIG_DIR)/local.mk"
 BR2_GLOBAL_PATCH_DIR="board/stmicroelectronics/common/stm32mp1xx/patches"
 
@@ -502,15 +502,15 @@ BR2_DOWNLOAD_FORCE_CHECK_HASHES=y
 # Security Hardening Options
 #
 BR2_PIC_PIE_ARCH_SUPPORTS=y
-BR2_PIC_PIE=y
 # BR2_SSP_NONE is not set
 # BR2_SSP_REGULAR is not set
 BR2_SSP_STRONG=y
 # BR2_SSP_ALL is not set
 BR2_SSP_OPTION="-fstack-protector-strong"
-# BR2_RELRO_NONE is not set
-# BR2_RELRO_PARTIAL is not set
-BR2_RELRO_FULL=y
+
+#
+# RELocation Read Only (RELRO) needs shared libraries
+#
 BR2_FORTIFY_SOURCE_ARCH_SUPPORTS=y
 # BR2_FORTIFY_SOURCE_NONE is not set
 BR2_FORTIFY_SOURCE_1=y
@@ -1265,7 +1265,28 @@ BR2_PACKAGE_NETSURF_ARCH_SUPPORTS=y
 #
 # BR2_PACKAGE_PSPLASH is not set
 # BR2_PACKAGE_SDL is not set
-# BR2_PACKAGE_SDL2 is not set
+BR2_PACKAGE_SDL2=y
+
+#
+# X11 video driver needs X.org
+#
+
+#
+# KMS/DRM video driver needs a GBM provider, and OpenGL or OpenGLES+EGL
+#
+
+#
+# OpenGL support needs X11 and an OpenGL provider
+#
+
+#
+# OpenGL ES support needs an OpenGL ES provider
+#
+BR2_PACKAGE_SDL2_GFX=y
+BR2_PACKAGE_SDL2_IMAGE=y
+BR2_PACKAGE_SDL2_MIXER=y
+BR2_PACKAGE_SDL2_NET=y
+BR2_PACKAGE_SDL2_TTF=y
 
 #
 # spirv-headers needs a toolchain w/ C++
@@ -1673,7 +1694,7 @@ BR2_PACKAGE_PYTHON3_PYC_ONLY=y
 BR2_PACKAGE_PYTHON3_SSL=y
 BR2_PACKAGE_PYTHON3_UNICODEDATA=y
 # BR2_PACKAGE_PYTHON3_SQLITE is not set
-# BR2_PACKAGE_PYTHON3_PYEXPAT is not set
+BR2_PACKAGE_PYTHON3_PYEXPAT=y
 # BR2_PACKAGE_PYTHON3_XZ is not set
 BR2_PACKAGE_PYTHON3_ZLIB=y
 
@@ -2015,7 +2036,7 @@ BR2_PACKAGE_PYTHON_PACKAGING=y
 # BR2_PACKAGE_PYTHON_PICKLESHARE is not set
 # BR2_PACKAGE_PYTHON_PIEXIF is not set
 # BR2_PACKAGE_PYTHON_PIGPIO is not set
-# BR2_PACKAGE_PYTHON_PILLOW is not set
+BR2_PACKAGE_PYTHON_PILLOW=y
 # BR2_PACKAGE_PYTHON_PIP is not set
 # BR2_PACKAGE_PYTHON_PLUGGY is not set
 # BR2_PACKAGE_PYTHON_PLY is not set
@@ -2057,7 +2078,7 @@ BR2_PACKAGE_PYTHON_PACKAGING=y
 # BR2_PACKAGE_PYTHON_PYDYF is not set
 # BR2_PACKAGE_PYTHON_PYELFTOOLS is not set
 # BR2_PACKAGE_PYTHON_PYFTPDLIB is not set
-BR2_PACKAGE_PYTHON_PYGMENTS=y
+# BR2_PACKAGE_PYTHON_PYGMENTS is not set
 # BR2_PACKAGE_PYTHON_PYHAMCREST is not set
 
 #
@@ -2651,7 +2672,7 @@ BR2_PACKAGE_FLUTTER_ENGINE_ARCH_SUPPORTS=y
 # flutter-engine needs a glibc toolchain w/ wchar, C++, gcc >= 5, dynamic library, host gcc >= 5
 #
 # BR2_PACKAGE_FONTCONFIG is not set
-# BR2_PACKAGE_FREETYPE is not set
+BR2_PACKAGE_FREETYPE=y
 # BR2_PACKAGE_GD is not set
 # BR2_PACKAGE_GDK_PIXBUF is not set
 # BR2_PACKAGE_GIFLIB is not set
@@ -2703,7 +2724,19 @@ BR2_PACKAGE_JPEG_SIMD_SUPPORT=y
 # libdecor needs a toolchain w/ wchar, threads, C++, gcc >= 4.9
 #
 # BR2_PACKAGE_LIBDMTX is not set
-# BR2_PACKAGE_LIBDRM is not set
+BR2_PACKAGE_LIBDRM=y
+BR2_PACKAGE_LIBDRM_HAS_ATOMIC=y
+# BR2_PACKAGE_LIBDRM_INTEL is not set
+# BR2_PACKAGE_LIBDRM_RADEON is not set
+# BR2_PACKAGE_LIBDRM_AMDGPU is not set
+# BR2_PACKAGE_LIBDRM_NOUVEAU is not set
+# BR2_PACKAGE_LIBDRM_OMAP is not set
+# BR2_PACKAGE_LIBDRM_ETNAVIV is not set
+# BR2_PACKAGE_LIBDRM_EXYNOS is not set
+# BR2_PACKAGE_LIBDRM_FREEDRENO is not set
+# BR2_PACKAGE_LIBDRM_TEGRA is not set
+# BR2_PACKAGE_LIBDRM_VC4 is not set
+# BR2_PACKAGE_LIBDRM_INSTALL_TESTS is not set
 
 #
 # libepoxy needs an OpenGL and/or OpenGL EGL backend
@@ -2979,7 +3012,10 @@ BR2_PACKAGE_OPENCSD_ARCH_SUPPORTS=y
 # BR2_PACKAGE_CJSON is not set
 BR2_PACKAGE_EXPAT=y
 # BR2_PACKAGE_JANSSON is not set
-# BR2_PACKAGE_JOSE is not set
+
+#
+# jose needs a toolchain w/ shared libraries, threads
+#
 # BR2_PACKAGE_JSMN is not set
 # BR2_PACKAGE_JSON_C is not set
 
@@ -3668,7 +3704,7 @@ BR2_PACKAGE_LIBNSPR_ARCH_SUPPORT=y
 #
 # libplist needs a toolchain w/ C++, threads
 #
-# BR2_PACKAGE_LIBPTHREAD_STUBS is not set
+BR2_PACKAGE_LIBPTHREAD_STUBS=y
 # BR2_PACKAGE_LIBPTHSEM is not set
 # BR2_PACKAGE_LIBPWQUALITY is not set
 # BR2_PACKAGE_LIBQB is not set
@@ -3787,6 +3823,10 @@ BR2_PACKAGE_TENSORFLOW_LITE_ARCH_SUPPORTS=y
 
 #
 # tensorflow-lite needs a toolchain w/ gcc >= 8, C++, threads
+#
+
+#
+# tensorflow-lite needs a toolchain w/ shared libraries
 #
 # BR2_PACKAGE_TINYCBOR is not set
 
@@ -5055,126 +5095,9 @@ BR2_PACKAGE_HOST_UTIL_LINUX=y
 # BR2_PACKAGE_HOST_XORRISO is not set
 # BR2_PACKAGE_HOST_ZIP is not set
 # BR2_PACKAGE_HOST_ZSTD is not set
-BR2_LEGACY=y
-
-#
-# Legacy detected: check the content of the menu below
-#
 
 #
 # Legacy config options
-#
-
-#
-# ----------------------------------------------------
-#
-
-#
-# Your old configuration uses legacy options that no  
-#
-
-#
-# longer exist in buildroot, as indicated in the menu 
-#
-
-#
-# below. As long as these options stay selected, or in
-#
-
-#
-# case of string options are non-empty, the build     
-#
-
-#
-# will fail.                                          
-#
-
-#
-# *                                                   
-#
-
-#
-# Where possible, an automatic conversion from old to 
-#
-
-#
-# new symbols has been performed. Before making any   
-#
-
-#
-# change in this legacy menu, make sure to exit the   
-#
-
-#
-# configuration editor a first time and save the      
-#
-
-#
-# configuration. Otherwise, the automatic conversion  
-#
-
-#
-# of symbols will be lost.                            
-#
-
-#
-# *                                                   
-#
-
-#
-# After this initial save, reopen the configuration   
-#
-
-#
-# editor, inspect the options selected below, read    
-#
-
-#
-# their help texts, and verify/update the new         
-#
-
-#
-# configuration in the corresponding configuration    
-#
-
-#
-# menus. When everything is ok, you can disable the   
-#
-
-#
-# legacy options in the menu below. Once you have     
-#
-
-#
-# disabled all legacy options, this text will         
-#
-
-#
-# disappear and you will be able to start the build.  
-#
-
-#
-# *                                                   
-#
-
-#
-# Note: legacy options older than 5 years have been   
-#
-
-#
-# removed, and configuration files that still have    
-#
-
-#
-# those options set, will fail to build, or run in    
-#
-
-#
-# unpredictable ways.                                 
-#
-
-#
-# ----------------------------------------------------
 #
 
 #
@@ -5341,7 +5264,7 @@ BR2_PACKAGE_IPMITOOL_PEN_REG_URI=""
 # BR2_PACKAGE_TINYMEMBENCH is not set
 # BR2_PACKAGE_DAVINCI_BOOTCOUNT is not set
 # BR2_PACKAGE_PYTHON_CROSSBAR is not set
-BR2_PACKAGE_PYTHON_PYGAME=y
+# BR2_PACKAGE_PYTHON_PYGAME is not set
 # BR2_KERNEL_HEADERS_4_14 is not set
 # BR2_PACKAGE_LIBCAMERA_PIPELINE_RASPBERRYPI is not set
 # BR2_GDB_VERSION_11 is not set
