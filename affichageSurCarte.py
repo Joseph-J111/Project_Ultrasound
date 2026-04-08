@@ -20,7 +20,7 @@ def read_sensor():
             data = f.read(4)
             if len(data) == 4:
                 # 'i' pour integer (4 octets)
-                val = struct.unpack('i', data)[0]
+                val = int(struct.unpack('i', data)[0])
                 return f"{val} mm"
             return "Format Erreur"
     except Exception:
