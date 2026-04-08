@@ -1,70 +1,84 @@
-import pygame
 import os
-import sys
+import time
+import struct
+from PIL import Image, ImageDraw, ImageFont
 
-# 1. Configuration pour l'écran de la carte (Framebuffer)
-os.environ["SDL_VIDEODRIVER"] = "fbcon"
-os.environ["SDL_FBDEV"] = "/dev/fb0"
+# --- Configuration ---
+FB_DEVICE = "/dev/fb0"
+DRIVER_DEVICE = "/dev/DUsound"
+
+def get_fb_info():
+    """ Récupère la taille de l'écran via sysfs ou valeurs par défaut """
+    # Sur STM32MP1 DK2, la résolution est généralement 480x800
+    return (480, 800) 
+
+def read_sensor():
+    """ Lecture du driver C """
+    try:
+        # On ouvre en binaire pour lire l'entier (int) envoyé par le driver C
+        with open(DRIVER_DEVICE, "rb") as f:
+            data = f.read(4)
+            if len(data) == 4:
+                # 'i' pour integer (4 octets)
+                val = struct.unpack('i', data)[0]
+                return f"{val} mm"
+            return "Format Erreur"
+    except Exception:
+        return "Erreur Driver"
 
 def main():
-    # Initialisation
-    pygame.init()
-    pygame.mouse.set_visible(False) # On cache la souris sur l'écran LCD
+    width, height = get_fb_info()
     
-    # Adaptation automatique à la taille de l'écran de la carte
-    info = pygame.display.Info()
-    ecran_taille = (info.current_w, info.current_h)
-    fenetre = pygame.display.set_mode(ecran_taille, pygame.FULLSCREEN)
-    
-    clock = pygame.time.Clock()
-    
-    # COULEURS
+    # Couleurs
     BLACK = (0, 0, 0)
     WHITE = (255, 255, 255)
     BLUE  = (0, 102, 204)
 
-    # OPTIMISATION : On prépare les objets fixes HORS de la boucle
-    # Si 'freesans' n'est pas sur Buildroot, pygame prendra la police par défaut
-    font_path = pygame.font.match_font('freesans', 'dejavusans', 'liberationsans')
-    bigText = pygame.font.Font(font_path, 60) 
-    titleText = pygame.font.Font(font_path, 30)
+    # Chargement de la police (adapter le chemin si besoin sur Buildroot)
+    try:
+        font_large = ImageFont.truetype("/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf", 60)
+        font_small = ImageFont.truetype("/usr/share/fonts/dejavu/DejaVuSans.ttf", 25)
+    except:
+        font_large = ImageFont.load_default()
+        font_small = ImageFont.load_default()
 
-    loop = True
-    while loop:
-        # 2. Gestion des événements (pour pouvoir quitter avec Ctrl+C)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                loop = False
+    print(f"Lancement de l'affichage sur {FB_DEVICE} ({width}x{height})")
 
-        # 3. Lecture du Driver
-        try:
-            fd = os.open("/dev/DUsound", os.O_RDONLY)
-            # On lit les 4 octets, on décode et on nettoie les espaces/retours à la ligne
-            distance_str = os.read(fd, 4).decode('utf-8').strip()
-            os.close(fd)
-            display_val = f"{distance_str} cm"
-        except Exception as e:
-            display_val = "Erreur Driver"
+    try:
+        # Ouverture du framebuffer en mode écriture binaire
+        with open(FB_DEVICE, "wb") as fb:
+            while True:
+                # 1. Création d'une image vierge (Mode RGB)
+                img = Image.new('RGB', (width, height), BLACK)
+                draw = ImageDraw.Draw(img)
 
-        # 4. DESSIN
-        fenetre.fill(BLACK) # On efface l'écran
+                # 2. Lecture de la donnée
+                display_val = read_sensor()
 
-        # Affichage du titre
-        surf_title = titleText.render("Mesure Ultrason (HC-SR04)", True, BLUE)
-        fenetre.blit(surf_title, (ecran_taille[0]//2 - surf_title.get_width()//2, 50))
+                # 3. Dessin des textes
+                title = "Mesure Ultrason (HC-SR04)"
+                
+                # Calcul positions pour centrer
+                w_t, h_t = draw.textbbox((0, 0), title, font=font_small)[2:]
+                draw.text(((width - w_t) // 2, 50), title, font=font_small, fill=BLUE)
 
-        # Affichage de la valeur (au centre)
-        surf_val = bigText.render(display_val, True, WHITE)
-        pos_val = surf_val.get_rect(center=(ecran_taille[0]//2, ecran_taille[1]//2))
-        fenetre.blit(surf_val, pos_val)
+                w_v, h_v = draw.textbbox((0, 0), display_val, font=font_large)[2:]
+                draw.text(((width - w_v) // 2, (height - h_v) // 2), display_val, font=font_large, fill=WHITE)
 
-        # 5. MISE À JOUR
-        pygame.display.flip()
-        
-        # 10 FPS suffisent largement pour un capteur ultrason (évite de chauffer le CPU)
-        clock.tick(2)
+                # 4. Conversion et Envoi au Framebuffer
+                # Le FB attend souvent du BGR ou du RGB 16/24/32 bits. 
+                # Si l'image est inversée ou bleue, on utilise : img.convert('RGB')
+                # Pour un FB 32 bits (standard sur MP1), on convertit en 'RGBA' ou 'RGBX'
+                raw_data = img.convert('RGBX').tobytes()
+                
+                fb.seek(0)
+                fb.write(raw_data)
+                fb.flush()
 
-    pygame.quit()
+                time.sleep(0.5) # 2 FPS pour économiser le CPU
 
-if __name__ == '__main__':
+    except KeyboardInterrupt:
+        print("\nArrêt du programme.")
+
+if __name__ == "__main__":
     main()
