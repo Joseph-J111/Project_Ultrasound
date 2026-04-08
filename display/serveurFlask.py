@@ -1,5 +1,6 @@
 from flask import Flask, render_template
 import os
+import struct
 
 app = Flask(__name__)
 
@@ -14,9 +15,10 @@ def get_data():
 	try:
     		# Lecture du driver dans le kernelspace [cite: 537, 638, 648]
     		fd = os.open("/dev/DUsound", os.O_RDONLY)
-    		distance = int(os.read(fd, 4).decode().strip())
+    		donnees = os.read(fd, 4)
+            distance = struct.unpack('<i', donnees)[0]  #f pour float
     		os.close(fd)
-    		return distance # Renvoie juste "15.4" par exemple
+    		return str(distance) # Renvoie juste "15.4" par exemple
 	except:
     		return "Erreur"
 
