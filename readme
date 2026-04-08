@@ -7,12 +7,14 @@ insa_defconfig		=> Whatever
 
 // Display
 Method 1: Basic 
- * changing the way in the file read.py
- * call -- " python3 read.py "
+ * ! ! ! changing the way in the file read.py
+ * access to the shell with picocom or SSH
+ * --  " python3 read.py "
+
 Method 2: Ethernet - Socket
   * find the card's IP adress and the port
-  * call  --  "  python3 socket_sender.py < card's IP > < Port> < file_path >  "
-  * call -- " python3 socket_receiver.py <Card's Ip< < Port>
+  *  On the card's shell  --  "  python3 socket_sender.py  "
+  *  On the PC's shell -- " python3 socket_receiver.py <Card's Ip< < Port>
 
 Affichage sur un PC via un navigateur web: 
 Avoir une structure de la forme suivante : 
