@@ -125,6 +125,7 @@ static ssize_t dev_read(struct file *fp, char __user *buf, size_t n, loff_t *of)
     int result = 0;
     int i;
     int timeout = 100000;
+    ktime_t start, end;
 
     if (*of > 0) return 0; //*of is the offset in the chardev file, we use it to know if we already read something or not (since we only have one int to read, we can just check if of > 0 
 
@@ -142,15 +143,16 @@ static ssize_t dev_read(struct file *fp, char __user *buf, size_t n, loff_t *of)
     } 
 
     //printk("timeout = %d\n", timeout);
-
+    start = ktime_get();
     // Measure
     for (i = 0; i < 1000000; i++) {
         if (gpiod_get_value(us_gpios->echo_gpio) == 0) break;
         udelay(1); // replace with passive waiting ?
     }
-    //printk("i = %d\n", i);
-    result = i; 
-    result = (i * 172) / 1000; // in mm
+    end = ktime_get();
+
+    result = ktime_to_us(ktime_sub(end, start)); // in us
+    result = (result * 172) / 1000; // in mm
 
     if (copy_to_user(buf, &result, sizeof(result))) return -EFAULT;
     *of += sizeof(result);
