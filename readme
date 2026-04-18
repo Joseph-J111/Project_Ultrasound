@@ -1,26 +1,61 @@
-locations :
+How to build:
 
-ultrasound 		=> buildroot/package
-stm32mp157c-dk2.dts 	=> buildroot/board/insa/sse
-stm32mp151.dtsi		=> buildroot/board/insa/sse (not sure it is necessary)
-insa_defconfig		=> Whatever
+1) Place files like this in your buildroot directory
 
-// Display
-Method 1: Basic 
- * ! ! ! changing the way in the file read.py
- * access to the shell with picocom or SSH
- * --  " python3 read.py "
+buildroot/
+├── board/
+│   └── insa/
+│       └── sse/
+│           ├── stm32mp151.dtsi    
+│           └── stm32mp157c-dk2.dts  
+├── configs/
+│   └── insa_defconfig              
+└── package/
+    └── ultrasound/   
 
-Method 2: Ethernet - Socket
-  * find the card's IP adress and the port
-  *  On the card's shell  --  "  python3 socket_sender.py  "
-  *  On the PC's shell -- " python3 socket_receiver.py <Card's Ip< < Port>
+2) In buildroot/ :
+    $ make insa_defconfig
+    $ make 
+    $ sudo dd if=./output/images/sdcard.img of=/dev/<YOUR_SD_CARD> status=progress bs=1M oflag=sync
 
-Affichage sur un PC via un navigateur web: 
-Avoir une structure de la forme suivante : 
-├── serveurFlask.py
-└── templates/
-    └── index.html
-Lancer le serveurFlask.py via >> python3 serveurFlask.py sur la carte
-puis se connecter à l'adresse ip de la carte
+   On the card : 
+    $ passwd root
+    $ sed -i 's/^#\?PermitRscp driver_lcd.py 192.168.1.139:/tmpootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+    $ pidof sshd
+    $ kill <PID_OF_SSHD>
+
+How to connect to the card:
+
+1) UART connection (shell):
+    $ picocom -b 115200 /dev/ttyACM0    (Might need to use sudo if permission denied)
+
+2) SSH connection (file transfer)
+    $ scp driver_lcd.py <IP_OF_THE_CARD>:/tmp
+
+How to use the driver :
+
+1) Basic 
+    Access the shell of the card
+    $ python3 read.py
+
+2) Socket
+    Find the card's IP 
+    On the card's shell:   
+        $ python3 socket_sender.py
+    On the PC's shell: 
+        $ python3 socket_receiver.py <CARD'S IP> 300
+
+3) Web server
+
+    On the card :
+        Put this file structure : 
+        ├── serveurFlask.py
+        └── templates/
+            └── index.html
+        
+        $ python3 serveurFlask.py
+
+    On the computer :
+        Connect to http://<CARD's IP>:5000/ via any web browser
+
 

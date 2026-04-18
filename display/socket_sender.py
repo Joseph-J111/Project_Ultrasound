@@ -22,6 +22,6 @@ def sender( Ip_PC,port,file_path ) :
                     time.sleep(0.5)  # attente pour laisser le temps de calcul / A VERIFIER
             
 
-sender("0.0.0.0",300,"/dev/DUsound")
+sender("0.0.0.0",300,"/dev/DUsound") #fixed port 300 for simplicity
      
 
