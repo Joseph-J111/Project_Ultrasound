@@ -20,7 +20,7 @@ buildroot/
 
    On the card : 
     $ passwd root
-    $ sed -i 's/^#\?PermitRscp driver_lcd.py 192.168.1.139:/tmpootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+    $ sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
     $ pidof sshd
     $ kill <PID_OF_SSHD>
 
